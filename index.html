@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>🎧 Noctra Music Player</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600&display=swap');
+
+*{
+  box-sizing:border-box;
+}
+
+/* ===== CUSTOM SCROLLBAR ===== */
+
+/* width */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+/* track (پس‌زمینه اسکرول) */
+::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.4);
+  border-radius: 10px;
+}
+
+/* thumb (خود دستگیره اسکرول) */
+::-webkit-scrollbar-thumb {
+  background: #1db954;
+  border-radius: 10px;
+  box-shadow:
+    0 0 8px #1db954,
+    0 0 20px #1db95466;
+}
+
+/* hover حالت */
+::-webkit-scrollbar-thumb:hover {
+  background: #1db954;
+  box-shadow: 0 0 15px #1db954aa;
+}
+
+body{
+  margin:0;
+  font-family:'Orbitron', Arial;
+  background: radial-gradient(circle at top,#12001f,#000 70%);
+  color:#fff;
+  overflow:hidden;
+  perspective:1200px;
+}
+
+/* animated glow bg */
+body::before{
+  content:"";
+  position:absolute;
+  inset:-200px;
+  background:
+    radial-gradient(circle at 20% 20%, #ff00ff22, transparent 40%),
+    radial-gradient(circle at 80% 30%, #00ffff22, transparent 40%),
+    radial-gradient(circle at 50% 80%, #1db95422, transparent 40%);
+  filter:blur(40px);
+  animation:floatBg 8s infinite alternate ease-in-out;
+  z-index:-1;
+}
+
+@keyframes floatBg{
+  from{transform:translate3d(0,0,0) scale(1);}
+  to{transform:translate3d(20px,-20px,0) scale(1.1);}
+}
+
+.container{
+  display:flex;
+  height:100vh;
+}
+
+/* LEFT PANEL */
+.left{
+  width:360px;
+  background:rgba(255,255,255,0.04);
+  backdrop-filter:blur(20px);
+  border-right:1px solid #1db95455;
+  padding:14px;
+  overflow:auto;
+  transform:translateZ(20px);
+  box-shadow: 10px 0 40px #00000088;
+}
+
+/* scroll */
+.left::-webkit-scrollbar{
+  width:6px;
+}
+.left::-webkit-scrollbar-thumb{
+  background:#1db954;
+  border-radius:10px;
+}
+
+h1{
+  font-size:18px;
+  color:#1db954;
+  text-shadow:0 0 12px #1db954, 0 0 30px #1db95455;
+  letter-spacing:2px;
+}
+
+/* BUTTONS */
+button{
+  width:100%;
+  padding:10px;
+  margin:6px 0;
+  background:linear-gradient(145deg,#111,#000);
+  border:1px solid #1db954;
+  color:#1db954;
+  cursor:pointer;
+  border-radius:10px;
+  transition:.25s;
+  box-shadow:0 0 10px #1db95422;
+}
+
+button:hover{
+  transform:translateY(-2px) scale(1.02);
+  box-shadow:0 0 20px #1db95466, 0 0 40px #1db95433;
+}
+
+/* SONG CARD 3D */
+.song{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px;
+  margin:8px 0;
+  background:rgba(0,0,0,0.45);
+  border-radius:12px;
+  cursor:pointer;
+  transition:.25s;
+  transform-style:preserve-3d;
+  border:1px solid transparent;
+}
+
+.song:hover{
+  transform:translateY(-3px) rotateX(6deg);
+  border:1px solid #1db95455;
+  box-shadow:0 10px 30px #000;
+}
+
+.song.active{
+  border-left:4px solid #1db954;
+  box-shadow:0 0 20px #1db95433;
+  transform:scale(1.02);
+}
+
+/* COVER */
+.cover{
+  width:38px;
+  height:38px;
+  border-radius:10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:11px;
+  font-weight:bold;
+  color:#000;
+  box-shadow:0 0 15px #000;
+  transform:translateZ(10px);
+}
+
+/* AUDIO WAVES */
+.bars{display:none;margin-left:auto;gap:2px}
+.bar{
+  width:3px;
+  height:10px;
+  background:#1db954;
+  animation:b 0.8s infinite ease-in-out;
+  box-shadow:0 0 10px #1db954;
+}
+.bar:nth-child(2){animation-delay:.15s}
+.bar:nth-child(3){animation-delay:.3s}
+
+@keyframes b{
+  0%,100%{transform:scaleY(.4)}
+  50%{transform:scaleY(1.6)}
+}
+.song.active .bars{display:flex}
+
+/* RIGHT SIDE */
+.right{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  transform:translateZ(40px);
+}
+
+/* VISUALIZER */
+canvas{
+  width:90%;
+  height:220px;
+  background:rgba(0,0,0,0.5);
+  border-radius:16px;
+  margin-bottom:12px;
+  box-shadow:0 0 30px #1db95422, inset 0 0 40px #000;
+  border:1px solid #1db95433;
+  backdrop-filter:blur(10px);
+}
+
+/* SLIDERS */
+input[type=range]{
+  width:90%;
+  accent-color:#1db954;
+  filter:drop-shadow(0 0 6px #1db95488);
+}
+
+/* TIME */
+.time{
+  width:90%;
+  display:flex;
+  justify-content:space-between;
+  font-size:12px;
+  color:#aaa;
+}
+
+/* CONTROLS */
+.controls{
+  display:flex;
+  gap:10px;
+  margin-top:14px;
+}
+
+.ctrl{
+  padding:10px 14px;
+  border-radius:10px;
+  border:1px solid #1db954;
+  background:linear-gradient(145deg,#111,#000);
+  color:#1db954;
+  cursor:pointer;
+  transition:.25s;
+  box-shadow:0 0 10px #1db95422;
+}
+
+.ctrl:hover{
+  transform:translateY(-3px) rotateX(10deg);
+  box-shadow:0 0 25px #1db95466;
+}
+
+/* floating neon vibe */
+.right::before{
+  content:"";
+  position:absolute;
+  width:300px;
+  height:300px;
+  background:#1db95433;
+  filter:blur(100px);
+  border-radius:50%;
+  animation:float 6s infinite alternate;
+  z-index:-1;
+}
+
+@keyframes float{
+  from{transform:translateY(-40px);}
+  to{transform:translateY(40px);}
+}
+/* =========================
+   RESPONSIVE CYBER FIX
+========================= */
+
+@media (max-width: 768px){
+
+  body{
+    overflow:auto;
+  }
+
+  .container{
+    flex-direction:column;
+    height:100vh;
+  }
+
+  /* LEFT becomes top scroll area */
+  .left{
+    width:100%;
+    height:55vh;
+    border-right:none;
+    border-bottom:1px solid #1db95455;
+    overflow-y:auto;
+  }
+
+  /* RIGHT becomes player area */
+  .right{
+    height:45vh;
+    justify-content:flex-start;
+    padding-top:10px;
+  }
+
+  canvas{
+    height:120px;
+    width:95%;
+  }
+
+  /* controls FIXED bottom */
+  .controls{
+    position:fixed;
+    bottom:10px;
+    left:50%;
+    transform:translateX(-50%);
+    background:rgba(0,0,0,0.6);
+    backdrop-filter:blur(10px);
+    padding:8px;
+    border-radius:14px;
+    border:1px solid #1db95455;
+    z-index:999;
+  }
+@media (max-width: 768px) {
+    .controls {
+        position: fixed;
+        bottom: -63px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(10px);
+        padding: 8px;
+        border-radius: 14px;
+        border: 1px solid #1db95455;
+        z-index: 999;
+    }
+}
+
+  .ctrl{
+    padding:8px 10px;
+    font-size:12px;
+  }
+
+  input[type=range]{
+    width:95%;
+  }
+
+  .time{
+    width:95%;
+    font-size:11px;
+  }
+}
+/* =========================
+   3D ROTATING COVER
+========================= */
+
+.cover-wrap{
+  width:100%;
+  display:flex;
+  justify-content:center;
+  margin-bottom:12px;
+  perspective:1000px;
+}
+
+.rotating-cover{
+  width:120px;
+  height:120px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:26px;
+  font-weight:bold;
+  color:#000;
+
+  background: radial-gradient(circle at 30% 30%, #1db954, #000);
+  box-shadow:
+    0 0 25px #1db95488,
+    0 0 60px #1db95444,
+    inset 0 0 20px #000;
+
+  border:2px solid #1db95466;
+
+  animation:spin 6s linear infinite;
+  transform-style:preserve-3d;
+}
+
+/* pause when not playing */
+.rotating-cover.paused{
+  animation-play-state:paused;
+  filter:grayscale(0.4);
+}
+
+@keyframes spin{
+  from{transform:rotateZ(0deg) rotateX(10deg);}
+  to{transform:rotateZ(360deg) rotateX(10deg);}
+}
+
+/* glow pulse */
+.rotating-cover::after{
+  content:"";
+  position:absolute;
+  width:140px;
+  height:140px;
+  border-radius:50%;
+  background:radial-gradient(circle, #1db95455, transparent 60%);
+  filter:blur(10px);
+  z-index:-1;
+  animation:pulse 2s infinite;
+}
+
+@keyframes pulse{
+  0%,100%{transform:scale(1);}
+  50%{transform:scale(1.15);}
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="left">
+<h1>🎧 Noctra Music Player</h1><p style="padding-right: initial;">Make By <a href="#" style="
+    color: yellow;
+">ClvEnT</a></p><p></p>
+<button onclick="fileInput.click()">+ Add Music</button>
+<div id="list"></div>
+</div>
+
+<div class="right">
+<div class="cover-wrap">
+  <div class="rotating-cover" id="bigCover"></div>
+</div>
+<canvas id="viz"></canvas>
+
+<input type="range" id="seek">
+<div class="time">
+<span id="cur">0:00</span>
+<span id="dur">0:00</span>
+</div>
+
+<input type="range" id="vol" min="0" max="1" step="0.01" value="1">
+
+<div class="controls">
+<button class="ctrl" onclick="prev()">⏮</button>
+<button class="ctrl" onclick="play()">▶</button>
+<button class="ctrl" onclick="pause()">⏸</button>
+<button class="ctrl" onclick="stop()">⏹</button>
+<button class="ctrl" onclick="next()">⏭</button>
+</div>
+
+</div>
+</div>
+
+<input type="file" id="fileInput" multiple accept="audio/*" hidden>
+<audio id="audio"></audio>
+
+<script>
+
+/* STATE */
+let tracks=[];
+let current=0;
+let queue=[];
+
+/* ELEMENTS */
+const audio=document.getElementById("audio");
+const list=document.getElementById("list");
+const fileInput=document.getElementById("fileInput");
+
+const seek=document.getElementById("seek");
+const vol=document.getElementById("vol");
+const cur=document.getElementById("cur");
+const dur=document.getElementById("dur");
+
+
+/* RESTORE */
+
+
+/* COLOR */
+function color(str){
+let h=0;
+for(let i=0;i<str.length;i++)
+h=str.charCodeAt(i)+((h<<5)-h);
+return `hsl(${h%360},70%,60%)`;
+}
+
+/* ADD */
+fileInput.onchange=e=>add(e.target.files);
+
+function add(files){
+let first=tracks.length===0;
+
+for(let f of files){
+tracks.push({name:f.name,url:URL.createObjectURL(f)});
+}
+
+render();
+if(first)load(0);
+save();
+}
+
+/* RENDER */
+function render(){
+list.innerHTML="";
+
+tracks.forEach((t,i)=>{
+let div=document.createElement("div");
+div.className="song";
+
+let c=document.createElement("div");
+c.className="cover";
+c.style.background=color(t.name);
+c.innerText=t.name.slice(0,2).toUpperCase();
+
+let name=document.createElement("div");
+name.innerText=t.name;
+
+let bars=document.createElement("div");
+bars.className="bars";
+bars.innerHTML=`<div class="bar"></div><div class="bar"></div><div class="bar"></div>`;
+
+let ctrl=document.createElement("div");
+ctrl.style.marginLeft="auto";
+ctrl.style.display="flex";
+ctrl.style.gap="4px";
+
+ctrl.innerHTML=`
+<button onclick="event.stopPropagation();up(${i})">⬆</button>
+<button onclick="event.stopPropagation();down(${i})">⬇</button>
+<button onclick="event.stopPropagation();del(${i})">🗑</button>
+`;
+
+div.appendChild(c);
+div.appendChild(name);
+div.appendChild(bars);
+div.appendChild(ctrl);
+
+div.onclick=()=>load(i);
+
+list.appendChild(div);
+});
+
+highlight();
+}
+
+/* LOAD */
+function load(i){
+  if(!tracks.length) return;
+
+  current = i;
+  audio.src = tracks[i].url;
+  audio.play();
+
+  updateCover(tracks[i].name); // 👈 اینو اضافه کن
+
+  highlight();
+}
+
+/* HIGHLIGHT */
+function highlight(){
+document.querySelectorAll(".song").forEach((el,i)=>{
+el.classList.toggle("active",i===current);
+});
+}
+
+/* CONTROLS */
+function play(){audio.play()}
+function pause(){audio.pause()}
+function stop(){audio.pause();audio.currentTime=0}
+
+function next(){
+if(queue.length>0){
+current=queue.shift();
+}else{
+current=(current+1)%tracks.length;
+}
+load(current);
+save();
+}
+
+function prev(){
+current=(current-1+tracks.length)%tracks.length;
+load(current);
+}
+
+/* DELETE FIXED */
+function del(i){
+let was=i===current;
+
+tracks.splice(i,1);
+
+if(tracks.length===0){
+audio.pause();
+audio.src="";
+current=0;
+render();
+save();
+return;
+}
+
+if(was){
+current=i%tracks.length;
+load(current);
+}else if(i<current){
+current--;
+}
+
+render();
+save();
+}
+
+/* MOVE */
+function up(i){
+if(i===0)return;
+[tracks[i-1],tracks[i]]=[tracks[i],tracks[i-1]];
+if(current===i)current--;
+else if(current===i-1)current++;
+render();save();
+}
+
+function down(i){
+if(i===tracks.length-1)return;
+[tracks[i+1],tracks[i]]=[tracks[i],tracks[i+1]];
+if(current===i)current++;
+else if(current===i+1)current--;
+render();save();
+}
+
+/* LOOP */
+audio.onended=()=>next();
+
+/* SEEK */
+audio.ontimeupdate=()=>{
+seek.value=(audio.currentTime/audio.duration)*100||0;
+cur.textContent=fmt(audio.currentTime);
+dur.textContent=fmt(audio.duration);
+};
+
+seek.oninput=()=>{
+audio.currentTime=(seek.value/100)*audio.duration;
+};
+
+/* VOLUME */
+vol.oninput=()=>audio.volume=vol.value;
+
+/* TIME */
+function fmt(s){
+let m=Math.floor(s/60)||0;
+let ss=Math.floor(s%60)||0;
+return `${m}:${ss<10?"0"+ss:ss}`;
+}
+
+/* VISUAL */
+const canvas=document.getElementById("viz");
+const ctx=canvas.getContext("2d");
+
+canvas.width=canvas.offsetWidth;
+canvas.height=canvas.offsetHeight;
+
+let ac,an,src;
+
+audio.onplay=()=>{
+if(!ac){
+ac=new AudioContext();
+src=ac.createMediaElementSource(audio);
+an=ac.createAnalyser();
+src.connect(an);
+an.connect(ac.destination);
+}
+draw();
+};
+
+function draw(){
+requestAnimationFrame(draw);
+if(!an)return;
+
+let d=new Uint8Array(an.frequencyBinCount);
+an.getByteFrequencyData(d);
+
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+let w=canvas.width/d.length*2;
+
+for(let i=0;i<d.length;i++){
+let h=d[i];
+ctx.fillStyle=`rgb(${h+80},0,255)`;
+ctx.fillRect(i*w,canvas.height-h,w,h);
+}
+}
+const bigCover = document.getElementById("bigCover");
+
+function updateCover(name){
+  bigCover.innerText = name.slice(0,2).toUpperCase();
+  bigCover.style.background = color(name);
+}
+
+</script>
+
+</body>
+</html>
